@@ -9,20 +9,26 @@
 
 BH1750 lightMeter;
 DHT dht1(2, DHT11);
-LoRaShield LoRa(10, 11);
+
 MQ135 Gas = MQ135(A1);
 
+LoRaShield LoRa(10, 11);
+
 String message;
+int wtr;
+float ppm;
+float tmp;
+float hum;
+uint16_t lux;
 
 void setup()
 {
   Serial.begin(115200);
-  LoRa.begin(38400);
-  lightMeter.begin();
   
+  lightMeter.begin();
   pinMode(A0, INPUT);
-  pinMode(A1, INPUT);
-  pinMode(2, INPUT);
+
+  LoRa.begin(38400);
 }
 
 void loop()
@@ -32,27 +38,22 @@ void loop()
     String s = LoRa.ReadLine();
     Serial.println(s);
   }
-
-  if (Serial.available()) {
-    int data = Serial.read();
-
-    if (data == '1' ) {
-      LoRa.getDevEUI();
-    }
-    if ( data == '2') {
-      int wtr = analogRead(A0);
-      float ppm = Gas.getPPM();
-      float tmp = dht1.readTemperature();
-      float hum = dht1.readHumidity();
-      uint16_t lux = lightMeter.readLightLevel();
+      wtr = analogRead(A0);
+      ppm = Gas.getPPM();
+      tmp = dht1.readTemperature();
+      hum = dht1.readHumidity();
+      lux = lightMeter.readLightLevel();
 
       message = String(tmp)+"/"+String(hum)+"/"+String(lux)+"/"+String(wtr)+"/"+String(ppm);
       Serial.println(message);
-      LoRa.sendMessage(message);  
-    }
-  }
+      delay(5000);
 
-
-  delay(10);
+      //LoRa.sendMessage(message);
+      LoRa.PrintTTV("01", tmp);
+      LoRa.PrintTTV("02", hum);
+      LoRa.PrintTTV("03", lux);
+      LoRa.PrintTTV("04", wtr);
+      LoRa.PrintTTV("05", ppm);
+      LoRa.SendTTV();
 }
 
